@@ -59,12 +59,41 @@ a way that the BIOS will recognize as contents to boot up at its start. the step
 3. insert the USB into your machine and reboot, select the Ubuntu option, and the USB will walk you through steps that
 will format your hard drive and transfer over the Ubuntu OS. you want the standard and minimal options which will copy
 nearly all the applications you are probably familiar with (browsers, drivers, settings, installations, documents,
-terminal, etc). it will complete, you will reboot, and now your machine defaults to landing on the Ubuntu OS: you did it.
+terminal, etc). you will need to select a root admin username and password, and a machine name which will nearly always
+be the primary way of referring to the machine instead of its IP address, even in a local area network. we have selected
+the name `jarvis` and will periodically refer to our machine as `jarvis` in documentation. transfer of the Ubuntu OS 
+will complete, you will reboot, and now your machine defaults to landing on the Ubuntu OS: you did it.
 
 ### going from Ubuntu to a programmer station and internet server
 
-in progress.
+So far what you have now is a computer with an operating system capable of being transformed into any other sort of
+computer, including to play games, perform work, view movies, same as any other. What we are doing is customizing our
+`jarvis` to be localized to data creation and processing, a process known as on-prem, and mostly disconnected from the
+external Internet, a configuration known as off-grid. 
 
+We will install additional Ubuntu packages to enable different functionalities, then a set of programs to enable
+familiar workflow patterns that uses software running on this machine instead of the broader cloud of the Internet.
+
+- [ ] nginx - is a low-level system which handles all inbound traffic to the machine, from other computers in the local
+network or external Internet, and redirects those to locally running computer applications on machine known as services.
+- [ ] Docker - is a container system for bottling applications and servers inside a sort-of replicated virtual computer,
+which allows programs to be bottled up as services, without needing to access the entire machine, designed to be
+scalable and shareable, and to crash in ways that would not impact other services and applications. It is very common
+for services and applications to be shared as what are called dockerized containers, which can then be downloaded just
+like applications and run, interacted with by creating Internet actions instead of clicks on an interactive application.
+- [ ] gitLab - is a reasonable and nearly full-featured equivalent of GitHub for storing code repositories locally only
+- [ ] ownCloud - is a reasonable and nearly full-featured Google Drive replacement to store and redundancy large storage
+- [ ] Python - is the programming language most deep learning is coded in, and one of the most popular program languages
+
+This system will be available to all local area network connected interfaces, i.e., all those which are connected to the
+home router, but not yet accessible to the external Internet because that traffic is blocked by the router firewall. all
+traffic that reaches programs running on the machine will enter through nginx to be redirected to any application needed. 
+
+We may later expand this set to additional core packages
+- [ ] keycloak - is a full-featured open source software package for storing personal identity information that various
+applications need once the user has verified their identity through a username password, bearer token, or API key; and
+the keycloak package generates these keys. we generally do not need to worry too stringently about API keys and security
+because we are running this system to and from within the home
 
 
 
