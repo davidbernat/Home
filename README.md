@@ -81,8 +81,9 @@ familiar workflow patterns that uses software running on this machine instead of
   scalable and shareable, and to crash in ways that would not impact other services and applications. It is very common
   for services and applications to be shared as what are called dockerized containers, which can then be downloaded just
   like applications and run, interacted with by creating Internet actions instead of clicks on an interactive application.
-- [ ] gitLab - is a reasonable and nearly full-featured equivalent of GitHub for storing code repositories locally only
 - [ ] ownCloud - is a reasonable and nearly full-featured Google Drive replacement to store and redundancy large storage
+- [ ] gitLab - is a reasonable and nearly full-featured equivalent of GitHub for storing code repositories locally only
+- [ ] openSSH - is a standard configuration to allow you to connect to your machine using the SSH process from terminals
 - [ ] Python - is the programming language most deep learning is coded in, and one of the most popular program languages
 
 This system will be available to all local area network connected interfaces, i.e., all those which are connected to the
@@ -195,6 +196,16 @@ simply use the `apt` package manager against: `sudo apt install docker-compose`
 
   NOTE: https://docs.docker.com/engine/security/#docker-daemon-attack-surface [very advanced; understand this and you are a hireable system operator]
 
+  6. create `/home/$USER/_server/` to store files in one convenient location - as you build applications, and in some
+cases deploy standard applications (e.g. ownCloud), it will be convenient to keep their configurations and input output
+data files in one coordinated location on your new machine. every username has what is referred to as its home directory
+at `/home/$USER/` and so we create the `/home/$USER/_server/` directory to store these aforementioned files; in computer
+terminology `_`, the underscore, means "private", as in "only the machine or administrator should ever really need to be
+in here", and `__`, the double underscore (not used here), means "internal" to imply that only the machine within that
+directory itself should ever need to access that information. when we deploy ownCloud we will use its docker-compose
+file instead of the `docker run` command, and we will hold that docker-compose file in `/home/$USER/_server/owncloud-docker-server/`
+to store whatever we need and much of whatever that server application produces for itself.
+
 - [ ] communicate between machines on your local area network - machines communicate through the local router, which 
 assigns the local IP address of each machine; and each machine is usually by default configured to disallow all local 
 inbound Internet traffic, and even then usually only previously specified (whitelisted) traffic is allowed, i.e., to a specific
@@ -278,7 +289,79 @@ system of calculations and file transfers on that machine locally.
    any inbound http traffic from even getting to the layers of the computer that search for any active servers on that port,
    but except for that tiny caveat everything we are doing is operating system independent and computer hardware independent.
 
-- [ ] what about owncloud, gitlab, Python: in progress 
+- [ ] install owncloud - ownCloud boasts the same functionality as real-time Google/DropBox with stated increased security, 
+although that claim is not verified by us, and is used by CERN and several Swiss firms, including financial and crypto 
+firms: about as best as our machine can get in the open source and free ecosystems. this allows us to store files from
+any computer in our network as we would Google Drive and provides both a similar interactive browser interface as Google
+Drive and an API in Python for our written programs to use its functionality. its shareable links are only accessible 
+inside our local network (unless we open our router to accept global public Internet inbound); however, be mindful that
+our machine is currently only a cloud of one machine: our files are not distributed over dozens or hundreds of redundancy
+backups across multiple computers in various geographic locations; we have one hard drive, same as any external hard drive.
+we will address these limitations in future updates, including selecting an inexpensive cloud provider to automatically
+redundancy backup our local files here in an unreadable form to our cloud provider. it is a very good system considering
+these limitations.
+    1. create `/home/$USER/_server/owncloud-docker-server/docker-compose.yml` and download an ownCloud docker compose file - open a text
+editor (plain text; with never rich text) to copy the docker compose text; we name our files `docker-compose.yml` which
+is the tacit default choice for naming docker compose files. take a few minutes to fumble around reading the content to
+familiarize yourself with the nuts and bolts of configuring a server. the "version" field refers to the version of docker
+compose, not the version of the file itself; "volumes" tells docker to create three spaces on the hard drive with those
+three names; "services" shows that this docker compose will actually create three individual docker servers, which is why
+all this configuration is bundled in a docker compose instead of using the direct function of `docker run` to deploy one
+service: here we have one service for the storage database on disk (mariadb), one for storage in memory for working with
+files (redis), and one for the graphical browser interface and functions of the api to interact with its data. we see that
+each service has its own various configuration: "image" is the name of the docker container (nginx in the previous example);
+"container_name" is the name of the service once running; "restart" allows the service to redeploy unpon failure; "ports"
+lists those ports mapping described previously; "depends_on" prevents the service from deploying if its dependencies are
+not already successfully running; "environment" is a list of in-container operating system variables to set (exactly how
+`$USER` is an environment variable containing your username in your machine operating system); "healthcheck" is a command
+the container itself is requested every so often to make sure the container is still properly functioning internally; and
+"volumes" is which volumes, which themselves correspond to file locations on the machine, the service may access, and where
+inside the container a file may be written so that the file is automatically copied or stored on the persistent machine storage,
+which will persist even after the container is stopped or deleted. the syntax `${OWNCLOUD_DOMAIN}` means that at deployment
+the docker compose system will search the machine operating system for a environment variable named `$OWNCLOUD_DOMAIN` and 
+replace its value directly before calculating its deployment: for instance, setting `$OWNCLOUD_DOMAIN=localhost:8080`
+will mean that the ownCloud graphical ui can be accessed at the web hostname `localhost` and port `8080`, which we know what that means. 
+  2. create `/home/$USER/_server/owncloud-docker-server/.env` and insert environmental variables - hundreds of environmental
+variables are in use in the operating system, and additional variables can be created any time in a number of ways; a 
+standard practice is to create a file named `.env` local to a directory where a command will be launched to contain its
+specific application-specific environmental variable needs. the `.` means the "dot-file" is "hidden" and will not show up
+in file directories and such unless the user specifically requests those be included. to create the `.env` file manually 
+type the six lines of variables to the text file and save the file; instead is more illuminating than the `cat` command.
+we want the configurations to be slightly different: `OWNCLOUD_VERSION=latest` always uses the latest version; `OWNCLOUD_DOMAIN=localhost:8000`
+sets the URL to port 8000 instead of 8080 since 8080 is a common default and other applications are likely to conflict with this later; 
+`HTTP_PORT=8000` does the same.
+  3. launch `docker compose up -d` - read the output and you will see that three different images are downloaded and deployed
+as three container services; type `docker ps` and you should see those three service deployed, and nginx if that is still running. 
+notice that had you launched both owncloud at nginx on 8080 the deployment of owncloud would fail. now open your browser 
+to `http://localhost:8000` (not `https://`) and you should be presented with the ownCloud login screen, using the username and 
+password in the `.env` file which you should not change, and your browser is now communicating with the `owncloud` docker container
+service as you click around. we will discuss the protections to secure using the default passwords later, but recognize that
+once we open the service up to other computers on your local network, you computers will actually interact with nginx which 
+will then forward your request to the service, then reply to nginx, which then replies to your computer. 
+    4. set up owncloud to be accessible from local computers? - navigate your other computer browser to `http://10.0.0.88:8000`,
+which is the local IP of your machine and the port the owncloud docker service is expecting to receive inbound requests from,
+and you should be greeted by an owncloud webpage that says "You are accessing the server through an untrusted domain." but, on
+the other hand, you are definitely using your computer to connect through your router to your machine and into the 
+docker service you are running owncloud; congratulations! a "trusted domain" is the following: in addition to needing to
+specify the exact local IP and port of the service running, a good standard is that applications already prevent all correctly
+directed traffic unless specifically whitelisted to be received from that particular sender; the list of `OWNCLOUD_TRUSTED_DOMAINS` in 
+`.env` only contained one entry, `localhost`, which means the service is rejecting all requests unless originating from `localhost`, 
+and your most recent request was sent from a local IP address through a router, not from the machine to itself bypassing the router. 
+even sending a request to `http://10.0.0.88:8000` from the machine browser itself lands at the same untrusted domains page, because
+`localhost` and `10.0.0.88` are not the same Internet action, and only one has been whitelist. we will solve this in the next 
+section, but note that we will not be solving this by creating a list of every trusted domain; instead we will install `nginx`
+to act as a relay switch: pointing all traffic to a nginx server, which we configure to pass traffic to individual servers we
+have running, and all of this traffic from nginx will be from the machine to the machine as so sent as `localhost`. this allows us
+to bottle all the security configurations into one application, which also has the capacity to do all kinds of Internet relay mechanics
+and scale later. but note that your local IP computers are communicating with your machine owncloud service, and we have entered
+the dominion of network security from server deployment; congratulations.
+  5. familiarize yourself with owncloud - login through the web UI using admin and read or delete documents included there. 
+create new users and familiarize yourself with the functionalities you might as a system of Google Drive or Dropbox users.
+remember that so far any shareable links are only accessible from the localhost itself; until we open up the service locally.
+
+  NOTE: https://doc.owncloud.com/server/next/admin_manual/installation/docker/#docker-compose
+
+- [ ] install nginx and redirect owncloud - in progress
 
 
 
