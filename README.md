@@ -140,47 +140,145 @@ spare clock cycles, which is how programmers joke about unused processing time, 
 intelligence, the structural logic not only of system designs of multiple component types, but how and when emergent
 intelligence of the system as a whole arrives beyond the function of any one service component or not specified in its original design.
 
-basic installations: 
-- [ ] in progress
+basic installations and local internet configurations:
+- [ ] docker - installation of docker on Ubuntu is a series of simple commands. the docker management system is
+automatically configured to launch in the background at start. whether or not a container restarts 'on reboot' is
+established by restart polices created for each container.
+  1. install using the command `apt` which is the simplest of the application install and removal commands in Ubuntu.  
+the extra steps about keyring is a way of telling `apt` how to install docker directly from the `apt` command itself.
 
-basics: 
-- [ ] get your local area network IP address of your new machine. this [webpage](https://linuxconfig.org/how-to-find-my-ip-address-on-ubuntu-20-04-focal-fossa-linux)
-shows the standard methods with `hostname -I` being the easiest terminal command. the local IP is usually `10.0.0.[NUM]`.
-this number can occasionally change when machines are rebooted; and your router can establish a permanent one that does
-not change; usually directly from within the app provided by your cable company or whoever provides your router. this 
-local IP address makes no sense to every computer not connected to the same router (or that is accepted by the router
-and forwarded by the router to a pre-approved local IP endpoint). this is also the reason [this meme](https://www.reddit.com/r/ProgrammerHumor/comments/pdhi77/localhost3000_breaks_friendships/) 
-is humorous. the caveat is that every machine is aware of the local IPs of the other machines on the internet network
-but also refers to itself by an additional IP address of `127.0.0.1` so that a machine may call itself without even
-going to the router to access the local IP. in this documentation we may use `10.0.0.88` as the machine local IP.
-- [ ] tell your other computers how to locate your machine. MacOS contains an `/etc/hosts` file that provides a simple
-two column list from URLs hostnames to IP addresses with no magic. Everytime the MacOS machine makes an Internet action
-the low-level system checks this file and substitutes the URL host with the IP address provided; this is precisely what
-external Internet DNS servers do to reconcile how to deliver a URL request (e.g. cnn.com/page.html) to a specific
-computer out elsewhere in the world with a specific similar public IP address. we simply need to add the line 
-`10.0.0.88     jarvis.home` to the `/etc/hosts` on my secondary laptop etc. and any browser or Internet requests to 
-`http://jarvis.home/page.html` we be transformed to a request for `page.html` on the machine with IP `10.0.0.88`. There
-is no server running on the new machine yet so this request will fail until we implement the next steps. Windows also
-has a similar host file you can find by no surprise by searching for "windows hosts file". 
-- [ ] run nginx on `jarvis` to expect inbound traffic
-    - first we need to understand what problem nginx solves. inbound Internet traffic lands at an IP address, and any
-machine can be configured as a server to listen for inbound traffic, and inbound traffic to one machine is subdivided 
-into what are called ports, ranging between 0 and 65535, e.g. `10.0.0.88:3000`. this allows a machine to relay different 
-ports to different applications and services. mail servers usually run on port 25, http usually on port 80, https runs 
-on port 8080, and so on, and each of your services will run on a different port. ports are entirely open to choose from,
-though some clear expectations are baked into the history of the Internet, and running your server where other engineers
-hard coded their expectations will create bugs. generally speaking 9000 to 9999 is wide open. we are already running
-into a part of a server that needs managing (which is why we use cloudnode) but it is important to know the roots of the
-Internet talking to itself among computers. nginx handles the low-level relaying for the machine, receiving IP and port
-combinations and serving up specific files, redirecting to a waiting service on the machine, or redirecting elsewhere.
-    - we will not be discussing the details of nginx configuration: but we do want to see what its configuration looks
-like to configure nginx so that inbound traffic to `gitlab.jarvis.home` reaches the correct application on the machine.
+        NOTE: https://docs.docker.com/engine/install/ubuntu/
+  2. docker is now installed if the `hello-world` container operation successfully displayed its message, and reading
+  closely you can see that a container named `hello-world` was downloaded (pulled) from a global public repository, and
+  then run, which generated a tutorial description in the process of running, then stopped itself from running. 
+  3. docker automatically creates a `docker` usergroup in the operating system which consists of all usernames with 
+permission to interact with the docker management system; the username you created needs to be added to that usergroup.
 
+        NOTE: `sudo usermod -aG docker $USER` adds `docker` usergroup permission to your username using its variable
+  name `$USER` and then `newgrp docker` switches you into the newly permissioned group until you ever take yourself out.
 
-addition server build notes: 
+        NOTE: https://stackoverflow.com/a/48957722
+  4. we will install a tool named docker-compose that allows us to define how each docker container builds and runs by
+creating a special configuration text file for each container; many applications user configuration approach. to install
+simply use the `apt` package manager against: `sudo apt install docker-compose`
+    
+  5. we can get a feel for how docker is used and now show that docker is successfully installed by deploying our first
+  web server as a test by using a preexisting containerized server that already exists in the global public docker 
+  repository. for this example we will deploy a version of the container named nginx (which is a containerization of the
+  same nginx we described previously). the command line to deploy a docker container uses the command `docker run` and
+  uses a few additional flags to specify how we want the deployment to be characterized; in brief, `-d` (set as daemon)
+  ensures that any operations or containers this container may launch on its own all stop when this deployment stops
+  (that is what a daemon is, fundamentally, in computer terminology), and `-p 8080:80` sets traffic that reaches our
+  machine on port 8080 (an unused port) will be allowed to enter the running container and redirected to and services
+  inside waiting for traffic to arrive from port 80, the standard http port for which the default nginx server inside
+  the container is waiting to hear from. this transfer of ports is a concept known as port mapping, and notice that no
+  other port traffic ever reaches the inside of our container, and is blocked by the container with very little fanfare.
+  The `--name web` flag provides a user chosen name to this deployed server instead of a randomly assigned name.
+  Run `docker run -d -p 8080:80 --name web nginx` and you should see readout text to the terminal that shows the 
+  container nginx:latest is not found locally and must be downloaded; and confirms the large file is downloaded 
+  correctly by comparing the sha256 hash of the download data to the sha256 stored at the repository; the server nginx
+  is now running: type `docker ps` to list each locally running container and you should see image nginx with name web.
+  Finally, the familiar part: open the computer web browser (Firefox) to a private session and navigate to `http://localhost:8080` (not https).
+  You should see a text web page that starts with "Welcome to nginx!". Congratulations; you have a web server, even if
+  that web server is only visible from this same machine itself (as is evidenced by using `localhost` or `127.0.0.1`).
+  Return to the terminal and type `docker rm -f web` and the docker management will force (`-f`) the container to stop
+  running and then be deleted. If you close and restart your private browser to `http://localhost:8080` you will see the
+  web server is not operating. A good rule of thumb is to test using private browsing because web browsers tend to cache
+  results (in browser cookies) and then revert to the cached version of the web page when the server cannot be reached;
+  you would not be surprised to know every engineer has lost countless hours sure they changed something on the backend
+  only to toggle fruitlessly on a browser without seeing their change, until they delete recent cookies; but also now
+  generally in the eras of infinity data we want to delete our browser cookies as infrequently as possible, or never.
 
+  NOTE: https://www.docker.com/blog/how-to-use-the-official-nginx-docker-image/
 
+  NOTE: https://docs.docker.com/config/containers/start-containers-automatically/
 
+  NOTE: https://docs.docker.com/engine/security/#docker-daemon-attack-surface [very advanced; understand this and you are a hireable system operator]
+
+- [ ] communicate between machines on your local area network - machines communicate through the local router, which 
+assigns the local IP address of each machine; and each machine is usually by default configured to disallow all local 
+inbound Internet traffic, and even then usually only previously specified (whitelisted) traffic is allowed, i.e., to a specific
+IP address with URLs configured in specifically interpretable ways. The router is responsible for blocking all inbound
+traffic from the global public Internet. A word of clarity: inbound refers to where the original request for information
+was sent from; when your machine sends an outbound request for a global public website, by connecting to the router than
+passing through to the public DNS Internet infrastructure, the return response data is, in a colloquial sense, inbound
+through the router to the original requesting machine. this is not an inbound request to receive information from your 
+computer; it is an inbound response carrying specifically defined data your machine and router already are expecting. an
+inbound request to your machine would be like an app on your phone trying to connect to your machine while you are away
+at the grocery store, external to the local area network of the machine; or, any number of inbound requests or attacks
+once the global public IP address of your router is known or leaked. we will not be configuring our system (now) to 
+operate outside the local network of the router; but, briefly, to do so is relatively simple for beginners and consists
+of requesting a static global public Internet IP address of your router from your ISP, and then configuring your router
+to forward inbound traffic to the static local area network IP of your machine. this setting is so common that you can
+probably find this somewhere in the advanced settings tab of whatever app your ISP provides you to pay its bills and check
+your Internet status and child use times. that global public IP address of your router is now enough to access your machine from anywhere, 
+although most people take this one step further: buy a domain name; and configure its DNS settings to forward traffic 
+from that domain name to the global public IP address of your router, a setting stored by the site that sold you your
+domain name. that is all the global public Internet is: a set of global lookup tables and forwarding routers to a
+computer somebody owns and maintains, probably running docker to serve your request its response data, performing a
+system of calculations and file transfers on that machine locally. 
+
+  1. get your local area network IP address of your new machine - this [webpage](https://linuxconfig.org/how-to-find-my-ip-address-on-ubuntu-20-04-focal-fossa-linux)
+  shows the standard methods with `hostname -I` being the easiest terminal command. the local IP is usually `10.0.0.[NUM]`.
+  this number can occasionally change when machines are rebooted; and your router can establish a permanent one that does
+  not change; usually directly from within the app provided by your cable company or whoever provides your router. this 
+  local IP address makes no sense to every computer not connected to the same router (or that is accepted by the router
+  and forwarded by the router to the pre-approved local IP endpoint). this is also the reason [this meme](https://www.reddit.com/r/ProgrammerHumor/comments/pdhi77/localhost3000_breaks_friendships/) 
+  is humorous. the caveat is that every machine can connect to the local IPs of the other machines on the router local area network
+  but also refers to itself by an additional IP address of `127.0.0.1` so that a machine may call itself without even
+  going to the router to access the other local IPs. in this documentation we may use `10.0.0.88` as the machine local IP, so
+  prevent using placeholders in places where the characters `[` and `]` may have other syntactic meaning. 
+  2. access your new machine from other computers using your local IP - your local IP address is enough for any computer
+  connected to your router to send a request to your new machine and its servers. return to the docker nginx run command
+  in the previous section and deploy a container containing the nginx server, precisely as above; you can keep that 
+  container running whenever you want, and with very little system overhead, though in later sections the port 8080 will 
+  be used for other applications and would cause a conflict, because low-level systems on the machine will prevent two
+  servers from waiting for traffic from the same port. so deploy a container of nginx on your machine and then navigate
+  any browser on your router network to its local IP at port 8080 (our `jarvis` here is `http://10.0.0.88:8080` at our local router) and you will see the
+  same text webpage of "Welcome to nginx!"; you can also choose to launch your server on nearly any different port. 
+  Congratulations; you engineered a network, or will after a short while of debugging. nothing to raise frustrations over.
+  as a useful reference for exploration, the list of ports and what use cases have staked claims to them as their defaults
+  over the years exists on Wikipedia, which makes an interesting kind of archeological ruins and yet also dark waters of the
+  global public Internet.
+
+  NOTE: https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
+
+   3. tell your other computers how to locate your new machine - this step provides a sort of tutorial in how computers
+   use hostnames (e.g. cnn.com) to reference IP addresses. the function of the DNS layer of the global public Internet stack 
+   is to hold the always-present lookup table, so that we can use words as shorthand (cnn.com) but also for longevity, so
+   that cnn.com always points to some correct IP address somewhere containing CNN data even if those computers move their
+   physical locations, or change their routers and Internet technology, or scale. each request to the global public
+   hostname cnn.com first goes to the global public DNS layer to get an endpoint IP address instead. inside your local
+   area network no such DNS service exists, and although your new machine has its own name (mine is `jarvis`) that name
+   is unrelated to any Internet connectivity, just as my human name has no association to my telephone number until one
+   is assigned to me, and you must call me by dialing my numbers until you add my human name to your telephone; but even
+   then what you do to your phone has no bearing to my phone (machine) or the phone of anyone else. this is the `/etc/hosts`
+   file of your computers, a low-level shorthand way for a computer itself to swap text hostnames for numeric IP addresses before
+   executing any request outbound from the computer. the file (in MacOS and Linux, and search online for the Windows version) is
+   a two column list of IP addresse hostname pairs with no magic. every outbound request from my computer checks whether
+   the exact hostname (e.g. cnn.com or news.cnn.com) is in the file and makes a direct substitute to an IP address instead,
+   in an analogy to DNS lookup tables, but localized only to this computer, not even the rest of the local network. it is 
+   an often forgot step for tasks we will want to rely on later. we simply need to add the line `10.0.0.88     jarvis.home` 
+   to the `/etc/hosts` file (on my secondary laptop etc.) and now `http://jarvis.home:8080` will be transformed to a request
+   on the machine with IP `10.0.0.88`. You can edit the file using the command `sudo emacs /etc/hosts` from your computer
+   terminal (and you should take a few minutes to fumble through using emacs for the first time because it will always be
+   handy). Windows also has a similar host file you can find by no surprise by searching for "windows hosts file". this
+   does not work for other computers with unedited `/etc/hosts` files, and we could even simply put `jarvis` or anything
+   else: this computer file has no knowledge that our new machine also refers to itself as `jarvis`, a somewhat fragile,
+   yet unburdensome reality. using `jarvis.home` helps us differentiate from `.com` and using the common two word hostname
+   helps minimize inconveniences later when we run siloed applications such as `owncloud.jarvis.home` or `[myskillset].jarvis.home`. and
+   you may notice that the first line in `/etc/hosts` is `127.0.0.1	localhost` which means that even our "special" use
+   of `http://localhost:8080` was really a request to the special IP address `http://127.0.0.1:8080` which means to request
+   to the computer itself without requesting information from the router.
+
+   4. you may be asking whether your computer can be used to host servers too - after all, your laptop etc. is simply an
+   operating system running on hardware; can you install docker and open terminal and launch a nginx server that can be
+   reached by its own http://localhost:8080 or from your new machine itself to the appropriate local IP of your computer
+   (mine is usually `10.0.0.193`). yes. the only caveat is that MacOS occasionally removes port 80 to default extra block
+   any inbound http traffic from even getting to the layers of the computer that search for any active servers on that port,
+   but except for that tiny caveat everything we are doing is operating system independent and computer hardware independent.
+
+- [ ] what about owncloud, gitlab, Python: in progress 
 
 
 
