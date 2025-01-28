@@ -6,7 +6,7 @@
 These specifications complete a 2-GPU server built from hardware components totalling under $600 plus the cost of two
 RTX 3050 8GB class GPUs, for a total of $1100 which allows concurrent training server inference for 100% uptime with
 roughly state-of-the-art 2023 models (current year minus two). These computers use Ubuntu and on-prem open source
-resources to minimize off-prem resource loading and will use the cloudnode system for development of services in Python.
+resources to minimize off-prem resource loading and will use the [cloudnode](https://github.com/markelwin/CloudNode) system for development of services in Python.
 These RTX 3050 8GB class GPUs are sufficient for real-time streaming video analysis and RAG generation models, thereby
 satisfying the most arduous constraints on such a system, and are built with standardized hardware components that allow
 all components to be flexibly sourced as stocks and performance changes into the future.
